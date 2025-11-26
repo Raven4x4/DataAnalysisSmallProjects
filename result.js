@@ -136,6 +136,8 @@ function abilityRow(ab, onToggle) {
 // Fixed-height abilities pane rendering
 // Render a single ability image for a player (image assigned earlier in start.js)
 function renderAbilities(storageKey, container) {
+  // في صفحة النتيجة 2 قد لا نستخدم حاوية قدرات، فتجاهل إن لم توجد
+  if (!container) return;
   container.innerHTML = "";
   const name = storageKey === P1_ABILITIES_KEY ? player1 : player2;
   const key = storageKey === P1_ABILITIES_KEY ? "player1AbilityImage" : "player2AbilityImage";
@@ -223,8 +225,11 @@ function renderVsRow() {
   const vsRow = document.getElementById("vsRow"); vsRow.innerHTML = "";
   vsRow.className = "flex justify-center items-start gap-10 md:gap-16 flex-wrap md:flex-nowrap";
   const side = (name, mediaUrl, pos /* 'left' | 'right' */, countryData) => {
-    const wrap = document.createElement("div"); wrap.className = "flex flex-col items-center gap-4";
-    const card = document.createElement("div"); card.className = "w-80 md:w-96 h-[26rem] md:h-[30rem] overflow-hidden flex items-center justify-center";
+    const wrap = document.createElement("div");
+    wrap.className = "flex flex-col items-center gap-4";
+
+    const card = document.createElement("div");
+    card.className = "w-80 md:w-96 h-[26rem] md:h-[30rem] overflow-hidden flex items-center justify-center";
     const media = createMedia(mediaUrl, "w-full h-full object-contain", true); card.appendChild(media);
 
     // 🔊 map correctly: left = player2, right = player1
@@ -232,28 +237,37 @@ function renderVsRow() {
       if (typeof window.WebmSfx.markSide === "function") window.WebmSfx.markSide(pos, mediaUrl);
     }
 
+    // حاوية البطاقات السابقة + مربع الملاحظات (عمودي)
+    const noteColumn = document.createElement("div");
+    noteColumn.className = "flex flex-col items-stretch gap-3";
+
+    const prevGrid = document.createElement("div");
+    prevGrid.id = pos === "left" ? "prevLeftGrid" : "prevRightGrid";
+    // شبكة 3 أعمدة مع سكرول عمودي لعرض البطاقات السابقة
+    prevGrid.className =
+      "w-64 md:w-72 max-h-40 overflow-y-auto no-scrollbar " +
+      "grid grid-cols-3 gap-2";
+
     const note = document.createElement("textarea");
     note.className = "note-box p-3 text-base font-semibold outline-none placeholder:opacity-60";
     note.placeholder = "ملاحظات الجولة";
     note.value = localStorage.getItem(NOTES_KEY(name)) || "";
     note.addEventListener("input", () => { localStorage.setItem(NOTES_KEY(name), note.value); broadcast(); });
 
-    const abilityHolder = document.createElement("div");
-    abilityHolder.id = pos === "left" ? "p2Abilities" : "p1Abilities";
-    abilityHolder.className = "ability-slot";
+    noteColumn.appendChild(prevGrid);
+    noteColumn.appendChild(note);
 
     const sideRow = document.createElement("div");
     sideRow.className = "flex items-center gap-4 md:gap-6";
     if (pos === "left") {
-      sideRow.appendChild(note);
+      sideRow.appendChild(noteColumn);
       sideRow.appendChild(card);
     } else {
       sideRow.appendChild(card);
-      sideRow.appendChild(note);
+      sideRow.appendChild(noteColumn);
     }
 
     wrap.appendChild(sideRow);
-    wrap.appendChild(abilityHolder);
     return wrap;
   };
 
